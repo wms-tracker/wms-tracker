@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, Response
-import pandas as pd
+import csv
 import re
 import io
 import os
@@ -30,12 +30,17 @@ def decode_tis620(raw_bytes):
     return ''.join(chr(b) if b < 0x80 else chr(TIS620_MAP[b-0x80]) for b in raw_bytes)
 
 def read_csv_auto(file_bytes):
+    """Returns list of dicts (like pandas DataFrame.to_dict records)"""
     for enc in ['utf-8-sig', None, 'tis-620', 'latin-1']:
         try:
             text = decode_tis620(file_bytes) if enc is None else file_bytes.decode(enc)
-            return pd.read_csv(io.StringIO(text))
+            reader = csv.DictReader(io.StringIO(text))
+            rows = [dict(r) for r in reader]
+            if rows: return rows
         except: pass
-    return pd.read_csv(io.StringIO(file_bytes.decode('latin-1')))
+    text = file_bytes.decode('latin-1')
+    reader = csv.DictReader(io.StringIO(text))
+    return [dict(r) for r in reader]
 
 def find_col(cols, patterns):
     for p in patterns:
@@ -64,7 +69,7 @@ def detect_carrier(tracking):
     return {'name':'อื่นๆ','short':'OTHER','url':''}
 
 def process_data(track_df, order_df=None):
-    tCols = track_df.columns.tolist()
+    tCols = list(track_df[0].keys()) if track_df else []
     tOid     = find_col(tCols,['Order ID','OrderID']) or tCols[1]
     tBrand   = find_col(tCols,['แบรนด์','brand']) or tCols[4]
     tTrack   = find_col(tCols,['Tracking','tracking']) or tCols[-1]
@@ -72,7 +77,7 @@ def process_data(track_df, order_df=None):
     tQty     = find_col(tCols,['Qty.','Qty','qty']) or tCols[5]
 
     track_map = {}
-    for _, row in track_df.iterrows():
+    for row in track_df:
         oid = str(row.get(tOid,'')).strip()
         brand = str(row.get(tBrand,''))
         tracking = str(row.get(tTrack,'')).strip()
@@ -87,18 +92,18 @@ def process_data(track_df, order_df=None):
 
     rows = []
     if order_df is not None:
-        oCols = order_df.columns.tolist()
+        oCols = list(order_df[0].keys()) if order_df else []
         oOid   = find_col(oCols,['Order ID','OrderID']) or oCols[2]
         oSku   = find_col(oCols,['SkU','SKU','sku']) or oCols[3]
         oBrand = find_col(oCols,['แบรนด์','brand']) or oCols[4]
         oSize  = find_col(oCols,['ขนาด','size']) or oCols[5]
         oQty   = find_col(oCols,['SUM of','SUM','sum','Qty']) or oCols[-1]
-        for _, row in order_df.iterrows():
+        for row in order_df:
             oid   = str(row.get(oOid,'')).strip()
             sku   = str(row.get(oSku,'')).strip()
             brand = str(row.get(oBrand,'')).strip()
-            size  = str(row.get(oSize,'')) if pd.notna(row.get(oSize)) else ''
-            qty   = int(row.get(oQty,1)) if pd.notna(row.get(oQty)) else 1
+            size  = str(row.get(oSize,'')) if row.get(oSize) not in (None, '', 'nan') else ''
+            qty   = int(float(row.get(oQty,1))) if str(row.get(oQty,'')).strip() not in ('','nan','None') else 1
             is_gift = brand.startswith('แถม')
             tm = (track_map.get(oid,{}).get(sku) or
                   track_map.get(oid,{}).get('__nosku') or
@@ -108,12 +113,12 @@ def process_data(track_df, order_df=None):
                          'consign':tm['consign'],'tracking':tm['tracking'],
                          'carrier':carrier,'is_gift':is_gift})
     else:
-        for _, row in track_df.iterrows():
+        for row in track_df:
             oid = str(row.get(tOid,'')).strip()
             brand = str(row.get(tBrand,''))
             tracking = str(row.get(tTrack,'')).strip()
             consign = str(row.get(tConsign,'')).strip()
-            qty = int(row.get(tQty,1)) if pd.notna(row.get(tQty)) else 1
+            qty = int(float(row.get(tQty,1))) if str(row.get(tQty,'')).strip() not in ('','nan','None') else 1
             carrier = detect_carrier(tracking)
             for line in [l.strip() for l in brand.split('\n') if l.strip()]:
                 skuM = re.search(r'\(([A-Z]{2,3}\d+)\)', line)
@@ -142,7 +147,8 @@ def upload():
         order_file = request.files.get('order_file')
         uploader   = request.form.get('uploader','ไม่ระบุ')
         if not track_file: return jsonify({'error':'กรุณาอัพโหลด Tracking file'}), 400
-        track_df = read_csv_auto(track_file.read())
+        track_bytes = track_file.read()
+        track_df = read_csv_auto(track_bytes)
         order_df = read_csv_auto(order_file.read()) if order_file and order_file.filename else None
         rows = process_data(track_df, order_df)
         shared_data['rows']        = rows
