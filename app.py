@@ -134,6 +134,7 @@ def index():
     has_data = len(shared_data['rows']) > 0
     html = HTML_PAGE
     html = html.replace('__HAS_DATA__', 'true' if has_data else 'false')
+    html = html.replace('__STATUS_CLASS__', '' if has_data else 'hidden')
     html = html.replace('__UPLOADED_BY__', shared_data['uploaded_by'])
     html = html.replace('__UPLOADED_AT__', shared_data['uploaded_at'])
     html = html.replace('__TRACK_FILE__', shared_data['track_file'])
@@ -290,7 +291,7 @@ td{padding:7px 10px;vertical-align:middle}
 </div>
 
 <!-- Status Bar -->
-<div class="status-bar {% if not has_data %}hidden" id="status-bar">
+<div class="status-bar __STATUS_CLASS__" id="status-bar">
   <span>✅ ข้อมูลพร้อมใช้งาน</span>
   <span id="status-detail"></span>
 </div>
@@ -298,7 +299,7 @@ td{padding:7px 10px;vertical-align:middle}
 <div id="result-area">
   
   <div class="spinner" id="spinner">กำลังโหลดข้อมูล...</div>
-  {% else %}
+  
   <div class="placeholder">
     <div style="font-size:48px;margin-bottom:12px">📂</div>
     <h2 style="font-size:16px;color:#64748b;margin-bottom:8px">ยังไม่มีข้อมูล</h2>
