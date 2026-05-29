@@ -230,17 +230,19 @@ td{padding:7px 10px;vertical-align:middle}
   <div id="mode-two" style="display:none">
     <div class="upload-grid">
       <div class="drop-zone" id="dz1" ondragover="doDragOver(event,'dz1')" ondragleave="doDragLeave('dz1')" ondrop="doDrop(event,'track')">
-        <input type="file" accept=".csv" onchange="pickFile(event,'track')">
         <div class="drop-icon">📋</div>
         <div class="drop-title">Tracking.csv</div>
         <div class="drop-sub">Order ID · Tracking · แบรนด์</div>
+        <input type="file" accept=".csv" id="csv1-input" style="display:none" onchange="pickFile(event,'track')">
+        <button onclick="document.getElementById('csv1-input').click()" style="margin-top:8px;padding:6px 14px;background:#2563eb;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">เลือกไฟล์</button>
         <div class="drop-done" id="track-name"></div>
       </div>
       <div class="drop-zone" id="dz2" ondragover="doDragOver(event,'dz2')" ondragleave="doDragLeave('dz2')" ondrop="doDrop(event,'order')">
-        <input type="file" accept=".csv" onchange="pickFile(event,'order')">
         <div class="drop-icon">📊</div>
         <div class="drop-title">ข้อมูลออเดอร์.csv <span style="color:#94a3b8;font-weight:400">(ถ้ามี)</span></div>
         <div class="drop-sub">Order ID · SKU · SUM of</div>
+        <input type="file" accept=".csv" id="csv2-input" style="display:none" onchange="pickFile(event,'order')">
+        <button onclick="document.getElementById('csv2-input').click()" style="margin-top:8px;padding:6px 14px;background:#2563eb;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">เลือกไฟล์</button>
         <div class="drop-done" id="order-name"></div>
       </div>
     </div>
@@ -249,14 +251,15 @@ td{padding:7px 10px;vertical-align:middle}
   <div id="mode-one">
     <div class="info-box">📗 ไฟล์ Excel ต้องมี 2 Sheet ชื่อ <strong>"Tracking"</strong> และ <strong>"ข้อมูลออเดอร์"</strong></div>
     <div class="single-upload" id="dz-xl" ondragover="doDragOver(event,'dz-xl')" ondragleave="doDragLeave('dz-xl')" ondrop="doDropXl(event)">
-      <input type="file" accept=".xlsx,.xls" onchange="loadXl(event)">
       <div class="drop-icon">📗</div>
       <div style="font-weight:700;color:#1e293b;font-size:14px;margin-bottom:4px">อัพโหลด Excel ไฟล์เดียว</div>
-      <div style="color:#64748b;font-size:11px">ลากวางหรือคลิกเลือกไฟล์ .xlsx</div>
-      <div class="sheet-tags">
+      <div style="color:#64748b;font-size:11px;margin-bottom:8px">ลากวางที่นี่ หรือกดปุ่มเลือกไฟล์</div>
+      <div class="sheet-tags" style="margin-bottom:10px">
         <span class="sheet-tag">Sheet: Tracking</span>
         <span class="sheet-tag">Sheet: ข้อมูลออเดอร์</span>
       </div>
+      <input type="file" accept=".xlsx,.xls" id="xl-input" style="display:none" onchange="loadXl(event)">
+      <button onclick="document.getElementById('xl-input').click()" style="padding:8px 20px;background:#6366f1;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">📂 เลือกไฟล์ .xlsx</button>
       <div class="drop-done" id="xl-name"></div>
     </div>
   </div>
